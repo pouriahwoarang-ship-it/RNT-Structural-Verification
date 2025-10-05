@@ -21,7 +21,7 @@ This repository contains the first fully formalized, machine-verified resolution
 This formalization complements the published paper:
 
 **Reflective Number Theory: A Structural Resolution of the Riemann Hypothesis**  
-Zenodo DOI: [10.5281/zenodo.XXXXXXX](https://doi.org/10.5281/zenodo.XXXXXXX)
+Zenodo DOI: 0.5281/zenodo.17273926
 
 ## 🚀 Build Instructions
 
