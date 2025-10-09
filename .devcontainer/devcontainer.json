@@ -1,0 +1,16 @@
+{
+  "name": "RNT Lean 4 Formalization Environment",
+  // استفاده از یک ایمیج کانتینر که Lean 4 را به صورت پیش‌فرض نصب دارد
+  "image": "m4thg33k/lean4-devcontainer:latest", 
+  
+  // تنظیمات مخصوص VS Code (افزونه‌های ضروری برای کار با Lean)
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "leanprover.lean4", // افزونه رسمی Lean 4 
+        "ms-python.python"  // برای هر گونه استفاده جانبی از پایتون
+      ]
+    }
+  },
+  "remoteUser": "vscode"
+}
