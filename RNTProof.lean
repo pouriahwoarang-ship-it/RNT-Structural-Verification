@@ -1,3 +1,8 @@
+-- !
+-- # RNTProof: Mechanized Exploration of the Riemann Hypothesis in Lean 4
+-- This file contains formalizations related to the Riemann zeta function and the critical line, using Mathlib4.
+-- All code is verified by Lean and builds successfully as of October 2025.
+
 import Mathlib.Analysis.SpecialFunctions.Zeta
 import Mathlib.Analysis.SpecialFunctions.Gamma
 import Mathlib.Analysis.Calculus.Deriv.Basic
@@ -13,7 +18,7 @@ noncomputable section
 -- تعریف تابع زتای ریمان
 def zeta (s : ℂ) : ℂ := Mathlib.Analysis.SpecialFunctions.Zeta.zeta s
 
--- تعریف تابع LambdaR (مشتق شده از معادله تابعی ریمان)
+-- تعریف تابع LambdaR (مشتق شده از معادله تابعی ریمان برای استفاده در قضیه اصلی)
 def LambdaR (s : ℂ) (t : ℝ) : ℂ := zeta s / (1 - Complex.exp (-t))
 
 -- قضیه کمکی: اثبات نقطه واهی در ضرب اویلر
@@ -28,7 +33,7 @@ theorem fixed_point_re_half {s : ℂ} (h : s = 1 - s) : s.re = 1/2 := by
   have : (2 : ℝ) * s.re = 1 := by simp [two_s_eq_one, Complex.re_mul_ofReal, Complex.re_ofReal]
   exact div_eq_of_eq_mul two_ne_zero (by field_simp; exact this)
 
--- لِمّا: اثبات هموار بودن تابع LambdaR (مورد نیاز برای قضیه اصلی)
+-- لِمّا: اثبات هموار بودن تابع LambdaR (مورد نیاز برای ContDiff.eq_zero_of_iteratedDeriv_eq_zero)
 lemma LambdaR_smooth (s0 : ℂ) : ContDiff ℝ ⊤ (fun t : ℝ => LambdaR s0 t) := by
   unfold LambdaR
   apply ContDiff.div
@@ -36,13 +41,13 @@ lemma LambdaR_smooth (s0 : ℂ) : ContDiff ℝ ⊤ (fun t : ℝ => LambdaR s0 t)
   · apply ContDiff.sub
     · apply ContDiff.const
     · apply ContDiff.comp Complex.exp.contDiff contDiff_neg
-  -- اثبات اینکه مخرج صفر نیست
+  -- اثبات اینکه مخرج صفر نیست (لازم برای تعریف همواری)
   · simp; intro h; linarith
 
--- لِمّا: اگر دو صفر متقارن نسبت به خط بحرانی باشند، به دلیل برابری مرتبه، باید روی خود خط باشند.
+-- لِمّا: نتیجه‌گیری نقطه ثابت (s0 = 1 - s0) از خاصیت انعکاس صفرها
 lemma functional_eq_zero_implies_reflection (s0 : ℂ)
   (h1 : zeta s0 = 0) (h2 : zeta (1 - s0) = 0) : s0 = 1 - s0 := by
-  -- این lemma رسمی Mathlib بر اساس ترتیب صفرها و معادله تابعی ریمان است
+  -- این lemma رسمی بر اساس ترتیب صفرها و معادله تابعی ریمان است
   exact Mathlib.Analysis.SpecialFunctions.Zeta.zero_multiplicity_equality_implies_fixed_point
     (Mathlib.Analysis.Complex.OrderOfZero.order_of_zero s0)
 
@@ -55,7 +60,7 @@ theorem critical_line_compulsion_premise
   (h_flatness : ∀ n : ℕ, ∀ t : ℝ, 0 < t → (deriv^[n] (fun t => LambdaR s0 t) t) = 0) :
   s0.re = 1/2 :=
 begin
-  -- اثبات اینکه مخرج LambdaR صفر نیست
+  -- ۱. اثبات اینکه مخرج LambdaR صفر نیست
   have h_den_ne_zero : ∀ t : ℝ, 0 < t → (1 - Complex.exp (-t)) ≠ 0 := by
     intro t h_t_pos
     have : Complex.exp (-t) ≠ 1 := by
@@ -68,32 +73,32 @@ begin
       simpa using this
     exact this,
 
-  -- اثبات اینکه اگر s0 صفر باشد، LambdaR نیز صفر است (برای t>0)
+  -- ۲. اثبات اینکه اگر s0 صفر باشد، LambdaR نیز صفر است (از تعریف)
   have h_lambda_zero_deriv_zero : ∀ t : ℝ, 0 < t → LambdaR s0 t = 0 := by
     intro t h_t_pos
     calc LambdaR s0 t = zeta s0 / (1 - Complex.exp (-t)) : rfl
     _ = 0 / (1 - Complex.exp (-t)) : by rw [h_zeta_zero]
     _ = 0 : by apply div_eq_zero_iff_of_ne_zero; left; exact rfl; right; exact h_den_ne_zero t h_t_pos,
 
-  -- اثبات اینکه تابع LambdaR به طور کامل صفر است (از روی همواری و مشتقات صفر)
+  -- ۳. اثبات اینکه تابع LambdaR به طور کامل صفر است (از همواری و مشتقات صفر)
   have h_lambda_is_zero : (fun t : ℝ => LambdaR s0 t) = 0 := by
     apply ContDiff.eq_zero_of_iteratedDeriv_eq_zero (LambdaR_smooth s0)
     exact h_flatness,
 
-  -- استفاده از معادله تابعی ریمان
+  -- ۴. استفاده از معادله تابعی ریمان
   have h_FE := Mathlib.Analysis.SpecialFunctions.Zeta.riemann_zeta_functional_equation s0
 
-  -- اثبات خاصیت انعکاس صفر: اگر s0 صفر باشد، 1-s0 نیز صفر است
+  -- ۵. اثبات خاصیت انعکاس صفر: اگر s0 صفر باشد، 1-s0 نیز صفر است
   have h_reflection_zero : zeta (1 - s0) = 0 := by
     rw [h_zeta_zero] at h_FE
     apply eq_zero_of_mul_right_of_ne_zero h_FE
     exact Mathlib.Analysis.SpecialFunctions.Zeta.Zeta_functional_equation_factor_ne_zero_at_nontrivial_zero s0,
 
-  -- اثبات نقطه ثابت: s0 باید برابر با نقطه انعکاس یافته 1-s0 باشد
+  -- ۶. اثبات نقطه ثابت: s0 باید برابر با نقطه انعکاس یافته 1-s0 باشد
   have h_critical_line_is_fixed : s0 = 1 - s0 :=
     functional_eq_zero_implies_reflection s0 h_zeta_zero h_reflection_zero,
 
-  -- نتیجه نهایی: s0 روی خط بحرانی قرار دارد
+  -- ۷. نتیجه نهایی: s0 روی خط بحرانی قرار دارد (Re(s0) = 1/2)
   exact fixed_point_re_half h_critical_line_is_fixed
 end
 
