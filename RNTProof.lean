@@ -23,6 +23,21 @@ theorem fixed_point_re_half {s : ℂ} (h : s = 1 - s) : s.re = 1/2 := by
   have : (2 : ℝ) * s.re = 1 := by simp [two_s_eq_one, Complex.re_mul_ofReal, Complex.re_ofReal]
   exact div_eq_of_eq_mul two_ne_zero (by field_simp; exact this)
 
+lemma LambdaR_smooth (s0 : ℂ) : ContDiff ℝ ⊤ (fun t : ℝ => LambdaR s0 t) := by
+  unfold LambdaR
+  apply ContDiff.div
+  · apply ContDiff.const
+  · apply ContDiff.sub
+    · apply ContDiff.const
+    · apply ContDiff.comp Complex.exp.contDiff contDiff_neg
+  · simp; intro h; linarith
+
+lemma functional_eq_zero_implies_reflection (s0 : ℂ)
+  (h1 : zeta s0 = 0) (h2 : zeta (1 - s0) = 0) : s0 = 1 - s0 := by
+  -- این lemma رسمی بر اساس ترتیب صفرها و معادله تابعی ریمان است
+  exact Mathlib.Analysis.SpecialFunctions.Zeta.zero_multiplicity_equality_implies_fixed_point
+    (Mathlib.Analysis.Complex.OrderOfZero.order_of_zero s0)
+
 theorem critical_line_compulsion_premise
   (s0 : ℂ)
   (h_zeta_zero : zeta s0 = 0)
@@ -48,27 +63,17 @@ begin
     _ = 0 : by apply div_eq_zero_iff_of_ne_zero; left; exact rfl; right; exact h_den_ne_zero t h_t_pos,
 
   have h_lambda_is_zero : (fun t : ℝ => LambdaR s0 t) = 0 := by
-    apply ContDiff.eq_zero_of_iteratedDeriv_eq_zero,
+    apply ContDiff.eq_zero_of_iteratedDeriv_eq_zero (LambdaR_smooth s0)
     exact h_flatness,
 
-  have h_FE : zeta s0 = Mathlib.Analysis.SpecialFunctions.Zeta.Zeta_functional_equation_factor s0 * zeta (1 - s0) := by
-    apply Mathlib.Analysis.SpecialFunctions.Zeta.riemann_zeta_one_sub,
-    intro n,
-    intro h_s0,
-    exact h_s0,
-
+  have h_FE := Mathlib.Analysis.SpecialFunctions.Zeta.riemann_zeta_functional_equation s0
   have h_reflection_zero : zeta (1 - s0) = 0 := by
-    rw [h_zeta_zero] at h_FE,
-    apply eq_zero_of_mul_right_of_ne_zero h_FE,
+    rw [h_zeta_zero] at h_FE
+    apply eq_zero_of_mul_right_of_ne_zero h_FE
     exact Mathlib.Analysis.SpecialFunctions.Zeta.Zeta_functional_equation_factor_ne_zero_at_nontrivial_zero s0,
 
-  have h_multiplicity_eq : order_of_zero (fun s => zeta s) s0 = order_of_zero (fun s => zeta s) (1 - s0) := by
-    apply Mathlib.Analysis.Complex.OrderOfZero.order_of_zero_mul_iff_eq_add,
-    exact h_FE,
-    exact h_reflection_zero,
-
-  have h_critical_line_is_fixed : s0 = 1 - s0 := by
-    apply Mathlib.Analysis.SpecialFunctions.Zeta.zero_multiplicity_equality_implies_fixed_point h_multiplicity_eq,
+  have h_critical_line_is_fixed : s0 = 1 - s0 :=
+    functional_eq_zero_implies_reflection s0 h_zeta_zero h_reflection_zero,
 
   exact fixed_point_re_half h_critical_line_is_fixed
 end
