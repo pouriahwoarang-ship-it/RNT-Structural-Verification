@@ -1,0 +1,33 @@
+name: Lean CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Lean toolchain
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y
+          echo "$HOME/.elan/bin" >> $GITHUB_PATH
+
+      - name: Install Lake and update dependencies
+        run: |
+          lake update
+
+      - name: Build Lean project
+        run: |
+          lake build
+
+      - name: Verify RNTProof.lean exists
+        run: |
+          test -f RNTProof.lean && echo "RNTProof.lean found." || (echo "RNTProof.lean missing!" && exit 1)
