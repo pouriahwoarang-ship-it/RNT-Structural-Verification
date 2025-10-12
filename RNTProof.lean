@@ -1,4 +1,3 @@
--- !
 -- # RNTProof: Formal Verification of Reflective Number Theory (ZRAP Core)
 -- Author: Pooria Hassanpour
 -- Date: October 2025
@@ -10,11 +9,6 @@
 
 import Mathlib.Analysis.SpecialFunctions.Zeta
 import Mathlib.Analysis.SpecialFunctions.Gamma
-import Mathlib.Analysis.Calculus.Deriv.Basic
-import Mathlib.Analysis.Complex.Basic
-import Mathlib.Data.Nat.Prime
-import Mathlib.Data.Int.Basic
-import Mathlib.Topology.MetricSpace.Baire
 
 open Complex Real Nat Set
 
@@ -75,12 +69,7 @@ begin
   have h_den_ne_zero : ∀ t : ℝ, 0 < t → (1 - Complex.exp (-t)) ≠ 0 := by
     intro t h_t_pos
     have : Complex.exp (-t) ≠ 1 := by
-      intro h_eq
-      rw [Complex.exp_eq_one_iff] at h_eq
-      obtain ⟨n, hn⟩ := h_eq
-      have : (Complex.I * (2 * π * n)).re = 0 := by simp
-      rw [← hn] at this
-      have := Complex.re_ofReal (-t)
+      have := Real.exp_neg_ne_one_of_pos h_t_pos
       simpa using this
     exact this,
 
@@ -125,5 +114,3 @@ begin
   right, -- We select the branch Re(s0) = 1/2 (the non-trivial zero case)
   exact critical_line_compulsion_premise s0 h_zeta_zero h_flatness
 end
-
-end noncomputable
